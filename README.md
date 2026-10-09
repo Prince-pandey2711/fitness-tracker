@@ -8,7 +8,7 @@ This project was developed as a college project to demonstrate full-stack web de
 
 ## 🚀 Live Application
 
-**Live Website:** [https://fitness-tracker-07me.onrender.com](https://fitness-tracker-07me.onrender.com)
+**Live Website:** [https://fitness-tracker-o7me.onrender.com](https://fitness-tracker-o7me.onrender.com)
 
 **GitHub Repository:** https://github.com/Prince-pandey2711/fitness-tracker
 
