@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${appName} + ' - Administrator Dashboard'">Admin Dashboard - FitTrack</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans selection:bg-amber-500 selection:text-slate-950">
+
+    <!-- Top Admin Header -->
+    <header class="bg-slate-900/95 border-b border-slate-800 sticky top-0 z-40 backdrop-blur-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-300 text-slate-950 flex items-center justify-center font-bold shadow-md shadow-amber-500/20">
+                    <i class="fa-solid fa-shield-halved text-lg"></i>
+                </div>
+                <div>
+                    <span class="text-lg font-bold tracking-tight bg-gradient-to-r from-amber-400 to-yellow-200 bg-clip-text text-transparent" th:text="${appName}">FitTrack Pro</span>
+                    <span class="ml-2 text-xs px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 font-bold uppercase tracking-wider">Admin Control Center</span>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <div class="hidden sm:flex flex-col text-right">
+                    <span class="text-sm font-semibold text-slate-200" th:text="${admin.name}">Administrator</span>
+                    <span class="text-xs text-amber-400" th:text="${admin.email}">admin@fitness.com</span>
+                </div>
+                <div class="w-9 h-9 rounded-full bg-slate-800 border border-amber-500/40 flex items-center justify-center text-amber-400 font-bold">
+                    <i class="fa-solid fa-user-shield text-sm"></i>
+                </div>
+                <a th:href="@{/logout}" class="p-2 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition text-sm" title="Sign Out">
+                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full">
+
+        <!-- Flash Output Confirmation Alerts -->
+        <div th:if="${successMsg}" class="mb-6 p-4 rounded-xl bg-emerald-950/70 border border-emerald-500/40 text-emerald-200 text-sm flex items-center justify-between shadow-lg shadow-emerald-950/50">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>
+                <span class="font-medium" th:text="${successMsg}">Administrator action succeeded!</span>
+            </div>
+            <button onclick="this.parentElement.remove()" class="text-emerald-400 hover:text-emerald-200"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div th:if="${errorMsg}" class="mb-6 p-4 rounded-xl bg-rose-950/70 border border-rose-500/40 text-rose-200 text-sm flex items-center justify-between shadow-lg shadow-rose-950/50">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-triangle-exclamation text-rose-400 text-lg"></i>
+                <span class="font-medium" th:text="${errorMsg}">Administrator action failed.</span>
+            </div>
+            <button onclick="this.parentElement.remove()" class="text-rose-400 hover:text-rose-200"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <!-- Admin KPI Metric Highlights -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-slate-400 font-medium">Registered Users</p>
+                    <h3 class="text-2xl font-black text-slate-100 mt-1" th:text="${totalUsers}">0</h3>
+                    <p class="text-[11px] text-emerald-400 mt-1"><span th:text="${regularUsers}">0</span> active members</p>
+                </div>
+                <div class="w-11 h-11 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-users"></i>
+                </div>
+            </div>
+
+            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-slate-400 font-medium">Workout Logs</p>
+                    <h3 class="text-2xl font-black text-slate-100 mt-1" th:text="${totalWorkouts}">0</h3>
+                    <p class="text-[11px] text-teal-400 mt-1"><span th:text="${totalMinutes}">0</span> total mins</p>
+                </div>
+                <div class="w-11 h-11 rounded-xl bg-teal-500/10 text-teal-400 flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-chart-line"></i>
+                </div>
+            </div>
+
+            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-slate-400 font-medium">Content Submissions</p>
+                    <h3 class="text-2xl font-black text-slate-100 mt-1" th:text="${allContent.size()}">0</h3>
+                    <p class="text-[11px] text-amber-400 mt-1"><span th:text="${pendingContent}">0</span> pending review</p>
+                </div>
+                <div class="w-11 h-11 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-newspaper"></i>
+                </div>
+            </div>
+
+            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-slate-400 font-medium">Challenge Partic.</p>
+                    <h3 class="text-2xl font-black text-slate-100 mt-1" th:text="${totalParticipants}">0</h3>
+                    <p class="text-[11px] text-indigo-400 mt-1"><span th:text="${challengesList.size()}">0</span> active challenges</p>
+                </div>
+                <div class="w-11 h-11 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-trophy"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Navigation Tabs -->
+        <div class="flex overflow-x-auto border-b border-slate-800 mb-6 gap-2 text-sm font-medium scrollbar-none">
+            <a th:href="@{/admin/dashboard(tab='users')}"
+               th:class="'px-4 py-2.5 rounded-t-xl transition flex items-center gap-2 whitespace-nowrap ' + (${activeTab == 'users'} ? 'bg-slate-900 text-amber-400 border-t-2 border-amber-500 font-bold' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/50')">
+                <i class="fa-solid fa-users-gear"></i> User Management
+            </a>
+            <a th:href="@{/admin/dashboard(tab='content')}"
+               th:class="'px-4 py-2.5 rounded-t-xl transition flex items-center gap-2 whitespace-nowrap ' + (${activeTab == 'content'} ? 'bg-slate-900 text-amber-400 border-t-2 border-amber-500 font-bold' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/50')">
+                <i class="fa-solid fa-file-circle-check"></i> Fitness Content Management
+                <span th:if="${pendingContent > 0}" class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] bg-amber-500 text-slate-950 font-black" th:text="${pendingContent}">1</span>
+            </a>
+            <a th:href="@{/admin/dashboard(tab='settings')}"
+               th:class="'px-4 py-2.5 rounded-t-xl transition flex items-center gap-2 whitespace-nowrap ' + (${activeTab == 'settings'} ? 'bg-slate-900 text-amber-400 border-t-2 border-amber-500 font-bold' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/50')">
+                <i class="fa-solid fa-sliders"></i> System Settings
+            </a>
+            <a th:href="@{/admin/dashboard(tab='stats')}"
+               th:class="'px-4 py-2.5 rounded-t-xl transition flex items-center gap-2 whitespace-nowrap ' + (${activeTab == 'stats'} ? 'bg-slate-900 text-amber-400 border-t-2 border-amber-500 font-bold' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/50')">
+                <i class="fa-solid fa-chart-pie"></i> Fitness Statistics
+            </a>
+            <a th:href="@{/admin/dashboard(tab='activity')}"
+               th:class="'px-4 py-2.5 rounded-t-xl transition flex items-center gap-2 whitespace-nowrap ' + (${activeTab == 'activity'} ? 'bg-slate-900 text-amber-400 border-t-2 border-amber-500 font-bold' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/50')">
+                <i class="fa-solid fa-wave-square"></i> System Activity Monitoring
+            </a>
+        </div>
+
+        <!-- ================= ADMIN TAB 1: USER MANAGEMENT ================= -->
+        <div th:if="${activeTab == 'users'}" class="space-y-6">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-900/60 p-5 rounded-2xl border border-slate-800">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-100 flex items-center gap-2">
+                        <i class="fa-solid fa-users text-amber-400"></i> User Management
+                    </h2>
+                    <p class="text-slate-400 text-xs mt-1">Manage user accounts and roles. Table listing user accounts with options for editing and deleting.</p>
+                </div>
+                <button onclick="openModal('createUserModal')" class="px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-sm transition shadow-lg shadow-amber-500/20 flex items-center gap-2">
+                    <i class="fa-solid fa-user-plus"></i> Add New User
+                </button>
+            </div>
+
+            <!-- Users Table -->
+            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+                <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900">
+                    <h3 class="font-bold text-sm text-slate-200">Registered Accounts</h3>
+                    <span class="text-xs text-slate-400" th:text="${usersList.size()} + ' total accounts'">0</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm text-slate-300">
+                        <thead class="bg-slate-950/60 text-xs uppercase text-slate-400 border-b border-slate-800">
+                            <tr>
+                                <th class="py-3.5 px-4 font-semibold">User ID</th>
+                                <th class="py-3.5 px-4 font-semibold">Full Name</th>
+                                <th class="py-3.5 px-4 font-semibold">Email</th>
+                                <th class="py-3.5 px-4 font-semibold">Role</th>
+                                <th class="py-3.5 px-4 font-semibold">Goal</th>
+                                <th class="py-3.5 px-4 font-semibold">Created Date</th>
+                                <th class="py-3.5 px-4 font-semibold text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800/60">
+                            <tr th:each="u : ${usersList}" class="hover:bg-slate-800/40 transition">
+                                <td class="py-3.5 px-4 font-mono text-xs text-slate-400" th:text="'#' + ${u.id}">#1</td>
+                                <td class="py-3.5 px-4 font-semibold text-slate-100" th:text="${u.name}">John Doe</td>
+                                <td class="py-3.5 px-4 text-slate-300" th:text="${u.email}">john@fitness.com</td>
+                                <td class="py-3.5 px-4">
+                                    <span th:if="${u.role == 'ADMIN'}" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30">ADMIN</span>
+                                    <span th:if="${u.role == 'USER'}" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">USER</span>
+                                </td>
+                                <td class="py-3.5 px-4 text-xs text-slate-400" th:text="${u.fitnessGoal}">General Health</td>
+                                <td class="py-3.5 px-4 text-xs text-slate-400" th:text="${#temporals.format(u.createdAt, 'dd MMM yyyy')}">Date</td>
+                                <td class="py-3.5 px-4 text-right">
+                                    <div class="inline-flex items-center gap-2">
+                                        <!-- Edit User Button -->
+                                        <button th:data-id="${u.id}" th:data-name="${u.name}" th:data-email="${u.email}" th:data-role="${u.role}"
+                                                onclick="openEditUserModal(this.getAttribute('data-id'), this.getAttribute('data-name'), this.getAttribute('data-email'), this.getAttribute('data-role'))"
+                                                class="px-2.5 py-1 text-xs rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition border border-slate-700" title="Edit User">
+                                            <i class="fa-solid fa-pen-to-square"></i> Edit
+                                        </button>
+                                        <!-- Delete User Button (disabled for self) -->
+                                        <form th:if="${u.id != admin.id}" th:action="@{/admin/users/delete/{id}(id=${u.id})}" method="POST" onsubmit="return confirm('Are you sure you want to permanently delete user ' + this.dataset.email + '?');" th:data-email="${u.email}" class="inline">
+                                            <button type="submit" class="px-2.5 py-1 text-xs rounded-lg bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 border border-rose-500/30 transition" title="Delete User">
+                                                <i class="fa-solid fa-trash-can"></i>
+                                            </button>
+                                        </form>
+                                        <span th:if="${u.id == admin.id}" class="text-[10px] text-slate-500 italic px-2 py-1">Current</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= ADMIN TAB 2: FITNESS CONTENT MANAGEMENT ================= -->
+        <div th:if="${activeTab == 'content'}" class="space-y-6">
+            <div class="bg-slate-900/60 p-5 rounded-2xl border border-slate-800">
+                <h2 class="text-xl font-bold text-slate-100 flex items-center gap-2">
+                    <i class="fa-solid fa-file-circle-check text-amber-400"></i> Fitness Content Management
+                </h2>
+                <p class="text-slate-400 text-xs mt-1">Approve or reject user-submitted fitness content. Table listing fitness content with options for approval or rejection.</p>
+            </div>
+
+            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+                <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900">
+                    <h3 class="font-bold text-sm text-slate-200">Content Submissions Queue</h3>
+                    <span class="text-xs text-amber-400 font-semibold" th:text="${pendingContent} + ' Pending Approvals'">0 Pending Approvals</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm text-slate-300">
+                        <thead class="bg-slate-950/60 text-xs uppercase text-slate-400 border-b border-slate-800">
+                            <tr>
+                                <th class="py-3.5 px-4 font-semibold">Article Title</th>
+                                <th class="py-3.5 px-4 font-semibold">Author</th>
+                                <th class="py-3.5 px-4 font-semibold">Category</th>
+                                <th class="py-3.5 px-4 font-semibold">Submission Date</th>
+                                <th class="py-3.5 px-4 font-semibold">Status</th>
+                                <th class="py-3.5 px-4 font-semibold text-right">Moderation Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800/60">
+                            <tr th:if="${allContent.isEmpty()}">
+                                <td colspan="6" class="py-8 text-center text-slate-500">
+                                    <i class="fa-solid fa-newspaper text-3xl mb-2 text-slate-600"></i>
+                                    <p>No content submissions in queue.</p>
+                                </td>
+                            </tr>
+                            <tr th:each="c : ${allContent}" class="hover:bg-slate-800/40 transition">
+                                <td class="py-3.5 px-4">
+                                    <div class="font-bold text-slate-100" th:text="${c.title}">Title</div>
+                                    <p class="text-xs text-slate-400 max-w-md line-clamp-1 mt-0.5" th:text="${c.body}">Excerpt</p>
+                                </td>
+                                <td class="py-3.5 px-4 text-xs">
+                                    <span class="font-semibold text-slate-200" th:text="${c.author.name}">Author</span>
+                                    <div class="text-[11px] text-slate-500" th:text="${c.author.email}">email</div>
+                                </td>
+                                <td class="py-3.5 px-4">
+                                    <span class="px-2 py-0.5 text-xs rounded-full bg-slate-800 border border-slate-700 text-slate-300" th:text="${c.category}">Category</span>
+                                </td>
+                                <td class="py-3.5 px-4 text-xs text-slate-400" th:text="${#temporals.format(c.createdAt, 'dd MMM yyyy HH:mm')}">Date</td>
+                                <td class="py-3.5 px-4">
+                                    <span th:if="${c.status == 'APPROVED'}" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">APPROVED</span>
+                                    <span th:if="${c.status == 'PENDING'}" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30 animate-pulse">PENDING</span>
+                                    <span th:if="${c.status == 'REJECTED'}" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-500/10 text-rose-400 border border-rose-500/30">REJECTED</span>
+                                </td>
+                                <td class="py-3.5 px-4 text-right">
+                                    <div class="inline-flex items-center gap-1.5">
+                                        <!-- View Modal Trigger -->
+                                        <button th:data-title="${c.title}" th:data-body="${c.body}" th:data-author="${c.author.name}" th:data-status="${c.status}"
+                                                onclick="viewArticleModal(this.getAttribute('data-title'), this.getAttribute('data-body'), this.getAttribute('data-author'), this.getAttribute('data-status'))"
+                                                class="px-2.5 py-1 text-xs rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition" title="Preview Article">
+                                            <i class="fa-solid fa-eye"></i> View
+                                        </button>
+                                        <!-- Approve form -->
+                                        <form th:action="@{/admin/content/approve/{id}(id=${c.id})}" method="POST" class="inline">
+                                            <button type="submit" class="px-2.5 py-1 text-xs rounded-lg bg-emerald-950/60 hover:bg-emerald-800 text-emerald-300 border border-emerald-500/40 transition font-bold" title="Approve Content">
+                                                <i class="fa-solid fa-check"></i> Approve
+                                            </button>
+                                        </form>
+                                        <!-- Reject form -->
+                                        <form th:action="@{/admin/content/reject/{id}(id=${c.id})}" method="POST" class="inline">
+                                            <button type="submit" class="px-2.5 py-1 text-xs rounded-lg bg-rose-950/60 hover:bg-rose-800 text-rose-300 border border-rose-500/40 transition font-bold" title="Reject Content">
+                                                <i class="fa-solid fa-xmark"></i> Reject
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= ADMIN TAB 3: SYSTEM SETTINGS ================= -->
+        <div th:if="${activeTab == 'settings'}" class="space-y-6">
+            <div class="bg-slate-900/60 p-5 rounded-2xl border border-slate-800">
+                <h2 class="text-xl font-bold text-slate-100 flex items-center gap-2">
+                    <i class="fa-solid fa-sliders text-amber-400"></i> System Settings
+                </h2>
+                <p class="text-slate-400 text-xs mt-1">Panel for managing system-wide settings and configurations. Confirmation message upon save.</p>
+            </div>
+
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 sm:p-8 max-w-3xl shadow-xl">
+                <form th:action="@{/admin/settings/update}" method="POST" class="space-y-6">
+                    <div class="space-y-4">
+                        <div th:each="s : ${settingsList}" class="p-4 rounded-xl bg-slate-950/60 border border-slate-800/80">
+                            <div class="flex justify-between items-start mb-2">
+                                <div>
+                                    <label class="text-xs font-bold uppercase tracking-wider text-amber-400 font-mono" th:text="${s.settingKey}">setting_key</label>
+                                    <p class="text-xs text-slate-400 mt-0.5" th:text="${s.description}">Setting description</p>
+                                </div>
+                                <span class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700" th:text="${s.category}">General</span>
+                            </div>
+
+                            <!-- Boolean toggles for flags -->
+                            <div th:if="${s.settingValue == 'true' or s.settingValue == 'false'}">
+                                <select th:name="${s.settingKey}" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:border-amber-500">
+                                    <option value="true" th:selected="${s.settingValue == 'true'}">Enabled (true)</option>
+                                    <option value="false" th:selected="${s.settingValue == 'false'}">Disabled (false)</option>
+                                </select>
+                            </div>
+
+                            <!-- Text inputs for values -->
+                            <div th:if="${s.settingValue != 'true' and s.settingValue != 'false'}">
+                                <input type="text" th:name="${s.settingKey}" th:value="${s.settingValue}"
+                                       class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-slate-200 focus:border-amber-500">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-4 border-t border-slate-800 flex justify-end">
+                        <button type="submit" class="px-6 py-2.5 rounded-xl font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 transition shadow-lg shadow-amber-500/20 text-sm flex items-center gap-2">
+                            <i class="fa-solid fa-check"></i> Save System Settings
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- ================= ADMIN TAB 4: FITNESS STATISTICS ================= -->
+        <div th:if="${activeTab == 'stats'}" class="space-y-6">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-900/60 p-5 rounded-2xl border border-slate-800">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-100 flex items-center gap-2">
+                        <i class="fa-solid fa-chart-pie text-amber-400"></i> Fitness Statistics & Analytics
+                    </h2>
+                    <p class="text-slate-400 text-xs mt-1">Graphs and tables showing user engagement, workout logs, and challenge participation.</p>
+                </div>
+                <button onclick="openModal('createChallengeModal')" class="px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-sm transition shadow-lg shadow-amber-500/20 flex items-center gap-2">
+                    <i class="fa-solid fa-trophy"></i> Create New Challenge
+                </button>
+            </div>
+
+            <!-- Visual Analytics Charts -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Daily Logging Trends Chart -->
+                <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 shadow-lg">
+                    <h3 class="text-sm font-bold text-slate-200 mb-4 flex items-center justify-between">
+                        <span><i class="fa-solid fa-chart-line text-emerald-400 mr-2"></i> Daily Workout Logs Activity (Last 7 Days)</span>
+                    </h3>
+                    <div class="h-64">
+                        <canvas id="adminDailyChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Global Activity Types Distribution -->
+                <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 shadow-lg">
+                    <h3 class="text-sm font-bold text-slate-200 mb-4 flex items-center justify-between">
+                        <span><i class="fa-solid fa-chart-pie text-amber-400 mr-2"></i> System-Wide Workout Distribution</span>
+                    </h3>
+                    <div class="h-64 flex items-center justify-center">
+                        <canvas id="adminTypeChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Challenge Management Table -->
+            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+                <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900">
+                    <h3 class="font-bold text-sm text-slate-200">Challenge Participation & Monitoring</h3>
+                    <span class="text-xs text-slate-400" th:text="${challengesList.size()} + ' total challenges'">0</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm text-slate-300">
+                        <thead class="bg-slate-950/60 text-xs uppercase text-slate-400 border-b border-slate-800">
+                            <tr>
+                                <th class="py-3 px-4 font-semibold">Title</th>
+                                <th class="py-3 px-4 font-semibold">Category</th>
+                                <th class="py-3 px-4 font-semibold">Target Criteria</th>
+                                <th class="py-3 px-4 font-semibold">Duration Window</th>
+                                <th class="py-3 px-4 font-semibold">Reward Badge</th>
+                                <th class="py-3 px-4 font-semibold">Status</th>
+                                <th class="py-3 px-4 font-semibold text-right">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800/60">
+                            <tr th:each="ch : ${challengesList}" class="hover:bg-slate-800/40 transition">
+                                <td class="py-3 px-4 font-bold text-slate-100" th:text="${ch.title}">Title</td>
+                                <td class="py-3 px-4 text-xs" th:text="${ch.category}">Category</td>
+                                <td class="py-3 px-4 text-xs text-slate-300" th:text="${ch.targetMinutes} + ' mins / ' + ${ch.targetWorkouts} + ' workouts'">Target</td>
+                                <td class="py-3 px-4 text-xs text-slate-400" th:text="${ch.startDate} + ' to ' + ${ch.endDate}">Dates</td>
+                                <td class="py-3 px-4">
+                                    <span class="text-xs font-bold text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20" th:text="${ch.badgeReward}">Badge</span>
+                                </td>
+                                <td class="py-3 px-4">
+                                    <span class="px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30" th:text="${ch.status}">ACTIVE</span>
+                                </td>
+                                <td class="py-3 px-4 text-right">
+                                    <form th:action="@{/admin/challenges/delete/{id}(id=${ch.id})}" method="POST" onsubmit="return confirm('Delete this challenge?');" class="inline">
+                                        <button type="submit" class="px-2 py-1 text-xs rounded bg-rose-950/40 hover:bg-rose-900 text-rose-300 border border-rose-500/30">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= ADMIN TAB 5: SYSTEM ACTIVITY MONITORING ================= -->
+        <div th:if="${activeTab == 'activity'}" class="space-y-6">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-900/60 p-5 rounded-2xl border border-slate-800">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-100 flex items-center gap-2">
+                        <i class="fa-solid fa-wave-square text-emerald-400"></i> Real-Time System Activity Monitoring
+                    </h2>
+                    <p class="text-slate-400 text-xs mt-1">Live updates on system changes and user activities across the platform.</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> Live Monitoring
+                    </span>
+                    <button onclick="fetchLatestActivities()" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-arrows-rotate" id="refreshIcon"></i> Refresh Feed
+                    </button>
+                </div>
+            </div>
+
+            <!-- Activity Log Feed -->
+            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+                <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900">
+                    <h3 class="font-bold text-sm text-slate-200">System Activity Audit Log</h3>
+                    <span class="text-xs text-slate-400" id="activityCount" th:text="${recentActivities.size()} + ' total events logged'">0 events</span>
+                </div>
+                <div class="overflow-x-auto max-h-[600px] overflow-y-auto">
+                    <table class="w-full text-left text-sm text-slate-300">
+                        <thead class="bg-slate-950/60 text-xs uppercase text-slate-400 border-b border-slate-800 sticky top-0 z-10">
+                            <tr>
+                                <th class="py-3 px-4 font-semibold">Timestamp</th>
+                                <th class="py-3 px-4 font-semibold">Origin / Type</th>
+                                <th class="py-3 px-4 font-semibold">User Email</th>
+                                <th class="py-3 px-4 font-semibold">Action</th>
+                                <th class="py-3 px-4 font-semibold">Activity Details</th>
+                            </tr>
+                        </thead>
+                        <tbody id="activityLogBody" class="divide-y divide-slate-800/60">
+                            <tr th:each="log : ${recentActivities}" class="hover:bg-slate-800/40 transition">
+                                <td class="py-3 px-4 font-mono text-xs text-slate-400 whitespace-nowrap" th:text="${#temporals.format(log.timestamp, 'yyyy-MM-dd HH:mm:ss')}">Time</td>
+                                <td class="py-3 px-4">
+                                    <span th:if="${log.type == 'ADMIN'}" class="px-2 py-0.5 rounded text-[11px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">ADMIN</span>
+                                    <span th:if="${log.type == 'USER'}" class="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">USER</span>
+                                    <span th:if="${log.type == 'SYSTEM'}" class="px-2 py-0.5 rounded text-[11px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">SYSTEM</span>
+                                </td>
+                                <td class="py-3 px-4 text-xs font-semibold text-slate-200" th:text="${log.userEmail}">email</td>
+                                <td class="py-3 px-4 font-mono text-xs text-amber-300 font-bold" th:text="${log.action}">ACTION</td>
+                                <td class="py-3 px-4 text-xs text-slate-300" th:text="${log.details}">Details</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- ================= ADMIN MODALS ================= -->
+
+    <!-- 1. Add User Modal -->
+    <div id="createUserModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl">
+            <div class="flex justify-between items-center mb-4 pb-2 border-b border-slate-800">
+                <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
+                    <i class="fa-solid fa-user-plus text-amber-400"></i> Add New User Account
+                </h3>
+                <button onclick="closeModal('createUserModal')" class="text-slate-400 hover:text-slate-200"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <form th:action="@{/admin/users/create}" method="POST" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Full Name</label>
+                    <input type="text" name="name" required placeholder="User name"
+                           class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-slate-100 text-sm focus:border-amber-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Email Address</label>
+                    <input type="email" name="email" required placeholder="user@fitness.com"
+                           class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-slate-100 text-sm focus:border-amber-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Temporary Password</label>
+                    <input type="password" name="password" required placeholder="••••••••"
+                           class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-slate-100 text-sm focus:border-amber-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Assigned Role</label>
+                    <select name="role" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-slate-100 text-sm focus:border-amber-500">
+                        <option value="USER" selected>USER (Standard Member)</option>
+                        <option value="ADMIN">ADMIN (Full Access)</option>
+                    </select>
+                </div>
+                <div class="pt-3 border-t border-slate-800 flex justify-end gap-2">
+                    <button type="button" onclick="closeModal('createUserModal')" class="px-3 py-1.5 rounded-lg text-slate-400 hover:bg-slate-800 text-xs">Cancel</button>
+                    <button type="submit" class="px-4 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold transition">Create Account</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 2. Edit User Modal -->
+    <div id="editUserModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl">
+            <div class="flex justify-between items-center mb-4 pb-2 border-b border-slate-800">
+                <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
+                    <i class="fa-solid fa-user-pen text-amber-400"></i> Edit User Account
+                </h3>
+                <button onclick="closeModal('editUserModal')" class="text-slate-400 hover:text-slate-200"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <form id="editUserForm" method="POST" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Full Name</label>
+                    <input type="text" id="editUserName" name="name" required
+                           class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-slate-100 text-sm focus:border-amber-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Email Address</label>
+                    <input type="email" id="editUserEmail" name="email" required
+                           class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-slate-100 text-sm focus:border-amber-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Account Role</label>
+                    <select id="editUserRole" name="role" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-slate-100 text-sm focus:border-amber-500">
+                        <option value="USER">USER</option>
+                        <option value="ADMIN">ADMIN</option>
+                    </select>
+                </div>
+                <div class="pt-3 border-t border-slate-800 flex justify-end gap-2">
+                    <button type="button" onclick="closeModal('editUserModal')" class="px-3 py-1.5 rounded-lg text-slate-400 hover:bg-slate-800 text-xs">Cancel</button>
+                    <button type="submit" class="px-4 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold transition">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 3. Preview Article Modal -->
+    <div id="viewArticleModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl">
+            <div class="flex justify-between items-center mb-3 pb-2 border-b border-slate-800">
+                <h3 id="articleModalTitle" class="text-base font-bold text-slate-100">Article Title</h3>
+                <button onclick="closeModal('viewArticleModal')" class="text-slate-400 hover:text-slate-200"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="text-xs text-slate-400 mb-3 flex items-center gap-3">
+                <span>Author: <strong id="articleModalAuthor" class="text-slate-200">Name</strong></span>
+                <span>Status: <strong id="articleModalStatus" class="text-amber-400">PENDING</strong></span>
+            </div>
+            <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 text-sm text-slate-300 whitespace-pre-line max-h-60 overflow-y-auto leading-relaxed" id="articleModalBody">
+                Article Body
+            </div>
+            <div class="pt-3 mt-4 border-t border-slate-800 flex justify-end">
+                <button onclick="closeModal('viewArticleModal')" class="px-4 py-1.5 rounded-xl bg-slate-800 text-slate-200 text-xs font-semibold">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. Create Challenge Modal -->
+    <div id="createChallengeModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl">
+            <div class="flex justify-between items-center mb-4 pb-2 border-b border-slate-800">
+                <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
+                    <i class="fa-solid fa-trophy text-amber-400"></i> Create Community Challenge
+                </h3>
+                <button onclick="closeModal('createChallengeModal')" class="text-slate-400 hover:text-slate-200"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <form th:action="@{/admin/challenges/create}" method="POST" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Challenge Title</label>
+                    <input type="text" name="title" required placeholder="e.g. 100km Cycling Marathon"
+                           class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-slate-100 text-sm focus:border-amber-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Description</label>
+                    <textarea name="description" rows="2" required placeholder="Goal, instructions, and tips..."
+                              class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-slate-100 text-sm focus:border-amber-500"></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Category</label>
+                        <select name="category" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-slate-100 text-sm focus:border-amber-500">
+                            <option value="Cardio">Cardio</option>
+                            <option value="Strength">Strength</option>
+                            <option value="Flexibility">Flexibility</option>
+                            <option value="Endurance">Endurance</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Reward Badge Name</label>
+                        <input type="text" name="badgeReward" required placeholder="e.g. Iron Cyclone"
+                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-slate-100 text-sm focus:border-amber-500">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Target Minutes</label>
+                        <input type="number" name="targetMinutes" value="300"
+                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-slate-100 text-sm focus:border-amber-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Target Workouts</label>
+                        <input type="number" name="targetWorkouts" value="10"
+                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-slate-100 text-sm focus:border-amber-500">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Start Date</label>
+                        <input type="date" name="startDate" th:value="${#temporals.format(#temporals.createNow(), 'yyyy-MM-dd')}" required
+                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-slate-100 text-sm focus:border-amber-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">End Date</label>
+                        <input type="date" name="endDate" th:value="${#temporals.format(#temporals.createNow().plusDays(30), 'yyyy-MM-dd')}" required
+                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-slate-100 text-sm focus:border-amber-500">
+                    </div>
+                </div>
+                <div class="pt-3 border-t border-slate-800 flex justify-end gap-2">
+                    <button type="button" onclick="closeModal('createChallengeModal')" class="px-3 py-1.5 rounded-lg text-slate-400 hover:bg-slate-800 text-xs">Cancel</button>
+                    <button type="submit" class="px-4 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold transition">Publish Challenge</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts for Admin Modals, Charts, and Live Activity Stream -->
+    <script th:inline="javascript">
+        function openModal(id) {
+            document.getElementById(id).classList.remove('hidden');
+        }
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        function openEditUserModal(id, name, email, role) {
+            document.getElementById('editUserForm').action = '/admin/users/update/' + id;
+            document.getElementById('editUserName').value = name;
+            document.getElementById('editUserEmail').value = email;
+            document.getElementById('editUserRole').value = role;
+            openModal('editUserModal');
+        }
+
+        function viewArticleModal(title, body, author, status) {
+            document.getElementById('articleModalTitle').innerText = title;
+            document.getElementById('articleModalBody').innerText = body;
+            document.getElementById('articleModalAuthor').innerText = author;
+            document.getElementById('articleModalStatus').innerText = status;
+            openModal('viewArticleModal');
+        }
+
+        function fetchLatestActivities() {
+            const icon = document.getElementById('refreshIcon');
+            if (icon) icon.classList.add('fa-spin');
+
+            fetch('/api/activities/recent')
+                .then(res => res.json())
+                .then(logs => {
+                    const tbody = document.getElementById('activityLogBody');
+                    if (!tbody) return;
+                    tbody.innerHTML = '';
+                    logs.forEach(log => {
+                        const tr = document.createElement('tr');
+                        tr.className = 'hover:bg-slate-800/40 transition';
+                        
+                        let typeBadge = `<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">${log.type}</span>`;
+                        if (log.type === 'ADMIN') typeBadge = `<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">ADMIN</span>`;
+                        if (log.type === 'USER') typeBadge = `<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">USER</span>`;
+
+                        tr.innerHTML = `
+                            <td class="py-3 px-4 font-mono text-xs text-slate-400 whitespace-nowrap">${log.timestamp ? log.timestamp.replace('T', ' ').substring(0, 19) : ''}</td>
+                            <td class="py-3 px-4">${typeBadge}</td>
+                            <td class="py-3 px-4 text-xs font-semibold text-slate-200">${log.userEmail}</td>
+                            <td class="py-3 px-4 font-mono text-xs text-amber-300 font-bold">${log.action}</td>
+                            <td class="py-3 px-4 text-xs text-slate-300">${log.details || ''}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                    const countEl = document.getElementById('activityCount');
+                    if (countEl) countEl.innerText = logs.length + ' total events logged';
+                })
+                .catch(err => console.log('Error refreshing activities:', err))
+                .finally(() => {
+                    if (icon) icon.classList.remove('fa-spin');
+                });
+        }
+
+        // Auto-refresh activity stream every 10 seconds if on activity tab
+        /*<![CDATA[*/
+        const currentTab = /*[[${activeTab}]]*/ 'users';
+        if (currentTab === 'activity') {
+            setInterval(fetchLatestActivities, 10000);
+        }
+
+        // Initialize Admin Charts
+        const dailyTrendsMap = /*[[${statsData != null ? statsData.dailyWorkoutTrends : null}]]*/ {};
+        const typesMap = /*[[${statsData != null ? statsData.workoutsByType : null}]]*/ {};
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Chart 1: Admin Daily Trends
+            const dailyCtx = document.getElementById('adminDailyChart');
+            if (dailyCtx && dailyTrendsMap) {
+                new Chart(dailyCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: Object.keys(dailyTrendsMap),
+                        datasets: [{
+                            label: 'Workouts Logged',
+                            data: Object.values(dailyTrendsMap),
+                            backgroundColor: 'rgba(245, 158, 11, 0.7)',
+                            borderColor: '#f59e0b',
+                            borderWidth: 1.5,
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: { stepSize: 1, color: '#94a3b8' },
+                                grid: { color: 'rgba(51, 65, 85, 0.4)' }
+                            },
+                            x: {
+                                grid: { display: false },
+                                ticks: { color: '#94a3b8' }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Chart 2: Admin Activity Type Distribution
+            const typeCtx = document.getElementById('adminTypeChart');
+            if (typeCtx && typesMap) {
+                new Chart(typeCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: Object.keys(typesMap),
+                        datasets: [{
+                            data: Object.values(typesMap),
+                            backgroundColor: [
+                                '#10b981', '#14b8a6', '#f59e0b', '#6366f1', '#ec4899', '#06b6d4', '#8b5cf6'
+                            ],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: { color: '#cbd5e1', boxWidth: 12, font: { size: 11 } }
+                            }
+                        }
+                    }
+                });
+            }
+        });
+        /*]]>*/
+    </script>
+</body>
+</html>

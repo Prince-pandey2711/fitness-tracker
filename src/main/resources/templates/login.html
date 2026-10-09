@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${appName} + ' - Sign In'">FitTrack - Sign In</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex items-center justify-center p-4">
+    <div class="w-full max-w-md">
+        <!-- Brand Header -->
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 text-slate-950 shadow-lg shadow-emerald-500/20 mb-3">
+                <i class="fa-solid fa-bolt text-3xl"></i>
+            </div>
+            <h1 class="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-emerald-400 to-teal-200 bg-clip-text text-transparent" th:text="${appName}">FitTrack Pro</h1>
+            <p class="text-slate-400 text-sm mt-1">Online Fitness Tracking & Analytics Portal</p>
+        </div>
+
+        <!-- Announcement Banner (if any) -->
+        <div th:if="${announcement != null and !announcement.isEmpty()}" class="mb-5 p-3 rounded-xl bg-emerald-950/60 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2 shadow-sm">
+            <i class="fa-solid fa-bullhorn text-emerald-400"></i>
+            <span th:text="${announcement}">Welcome to FitTrack!</span>
+        </div>
+
+        <!-- Alerts -->
+        <div th:if="${msg}" class="mb-4 p-3 rounded-xl bg-teal-950/60 border border-teal-500/40 text-teal-300 text-sm flex items-center gap-2">
+            <i class="fa-solid fa-circle-check text-teal-400"></i>
+            <span th:text="${msg}"></span>
+        </div>
+        <div th:if="${error}" class="mb-4 p-3 rounded-xl bg-rose-950/60 border border-rose-500/40 text-rose-300 text-sm flex items-center gap-2">
+            <i class="fa-solid fa-triangle-exclamation text-rose-400"></i>
+            <span th:text="${error}"></span>
+        </div>
+
+        <!-- Sign-in Card -->
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-2xl backdrop-blur-md">
+            <h2 class="text-xl font-bold text-slate-100 mb-6 flex items-center gap-2">
+                <i class="fa-solid fa-right-to-bracket text-emerald-400"></i> Account Sign In
+            </h2>
+
+            <form th:action="@{/login}" method="POST" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5" for="email">Email Address</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-500 pointer-events-none">
+                            <i class="fa-regular fa-envelope"></i>
+                        </span>
+                        <input type="email" id="email" name="email" th:value="${email}" required placeholder="name@fitness.com"
+                               class="w-full bg-slate-950/70 border border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition text-sm">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5" for="password">Password</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-500 pointer-events-none">
+                            <i class="fa-solid fa-lock"></i>
+                        </span>
+                        <input type="password" id="password" name="password" required placeholder="••••••••"
+                               class="w-full bg-slate-950/70 border border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition text-sm">
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full mt-2 py-3 px-4 rounded-xl font-semibold bg-emerald-500 hover:bg-emerald-400 text-slate-950 transition shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2">
+                    <span>Sign In to Dashboard</span>
+                    <i class="fa-solid fa-arrow-right text-xs"></i>
+                </button>
+            </form>
+
+            <!-- Quick Demo Credentials Box -->
+            <div class="mt-6 pt-6 border-t border-slate-800">
+                <p class="text-xs text-slate-400 mb-3 text-center uppercase tracking-wider font-semibold">Quick Demo Login Presets</p>
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                    <button type="button" onclick="fillCredentials('admin@fitness.com', 'Password123!')"
+                            class="p-2.5 rounded-lg bg-slate-800/70 hover:bg-slate-800 text-left border border-slate-700/60 transition group">
+                        <div class="font-bold text-amber-400 group-hover:text-amber-300 flex items-center gap-1.5">
+                            <i class="fa-solid fa-shield-halved"></i> Admin
+                        </div>
+                        <div class="text-[11px] text-slate-400 truncate">admin@fitness.com</div>
+                    </button>
+                    <button type="button" onclick="fillCredentials('user@fitness.com', 'Password123!')"
+                            class="p-2.5 rounded-lg bg-slate-800/70 hover:bg-slate-800 text-left border border-slate-700/60 transition group">
+                        <div class="font-bold text-emerald-400 group-hover:text-emerald-300 flex items-center gap-1.5">
+                            <i class="fa-solid fa-user"></i> Regular User
+                        </div>
+                        <div class="text-[11px] text-slate-400 truncate">user@fitness.com</div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Registration Link -->
+            <div class="mt-6 text-center text-xs text-slate-400">
+                Don't have an account? 
+                <a th:href="@{/register}" class="font-semibold text-emerald-400 hover:text-emerald-300 underline underline-offset-4 ml-1">Create Account</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function fillCredentials(email, pass) {
+            document.getElementById('email').value = email;
+            document.getElementById('password').value = pass;
+        }
+    </script>
+</body>
+</html>

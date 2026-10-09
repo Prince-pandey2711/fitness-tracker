@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${appName} + ' - User Dashboard'">User Dashboard - FitTrack</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans selection:bg-emerald-500 selection:text-slate-950">
+
+    <!-- Top Navigation Bar -->
+    <header class="bg-slate-900/90 border-b border-slate-800 sticky top-0 z-40 backdrop-blur-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 text-slate-950 flex items-center justify-center font-bold shadow-md shadow-emerald-500/20">
+                    <i class="fa-solid fa-bolt text-lg"></i>
+                </div>
+                <div>
+                    <span class="text-lg font-bold tracking-tight bg-gradient-to-r from-emerald-400 to-teal-200 bg-clip-text text-transparent" th:text="${appName}">FitTrack Pro</span>
+                    <span class="ml-2 text-xs px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium">User Portal</span>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <div class="hidden sm:flex flex-col text-right">
+                    <span class="text-sm font-semibold text-slate-200" th:text="${user.name}">Jane Doe</span>
+                    <span class="text-xs text-slate-400" th:text="${user.email}">user@fitness.com</span>
+                </div>
+                <div class="w-9 h-9 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-emerald-400 font-bold">
+                    <span th:text="${#strings.substring(user.name, 0, 1)}">U</span>
+                </div>
+                <a th:href="@{/logout}" class="p-2 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition text-sm" title="Sign Out">
+                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Announcement Bar -->
+    <div th:if="${announcement != null and !announcement.isEmpty()}" class="bg-emerald-950/40 border-b border-emerald-500/20 py-2 px-4 text-xs text-emerald-300 text-center flex items-center justify-center gap-2">
+        <i class="fa-solid fa-bullhorn text-emerald-400"></i>
+        <span th:text="${announcement}">Stay consistent to achieve your fitness targets!</span>
+    </div>
+
+    <!-- Main Content Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full">
+
+        <!-- Flash Messages (Output confirmations) -->
+        <div th:if="${successMsg}" class="mb-6 p-4 rounded-xl bg-emerald-950/70 border border-emerald-500/40 text-emerald-200 text-sm flex items-center justify-between shadow-lg shadow-emerald-950/50">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>
+                <span class="font-medium" th:text="${successMsg}">Action completed successfully!</span>
+            </div>
+            <button onclick="this.parentElement.remove()" class="text-emerald-400 hover:text-emerald-200"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div th:if="${errorMsg}" class="mb-6 p-4 rounded-xl bg-rose-950/70 border border-rose-500/40 text-rose-200 text-sm flex items-center justify-between shadow-lg shadow-rose-950/50">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-triangle-exclamation text-rose-400 text-lg"></i>
+                <span class="font-medium" th:text="${errorMsg}">An error occurred.</span>
+            </div>
+            <button onclick="this.parentElement.remove()" class="text-rose-400 hover:text-rose-200"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <!-- Top Metric Summary Cards -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-slate-400 font-medium">Weekly Active Time</p>
+                    <h3 class="text-2xl font-black text-slate-100 mt-1">
+                        <span th:text="${progress.weeklyMinutes}">0</span>
+                        <span class="text-xs font-normal text-slate-400">/ <span th:text="${progress.targetWeeklyMinutes}">150</span> min</span>
+                    </h3>
+                    <div class="w-full bg-slate-800 rounded-full h-1.5 mt-2 overflow-hidden">
+                        <div class="bg-emerald-500 h-1.5 rounded-full" th:style="'width: ' + ${progress.weeklyProgressPercentage} + '%'"></div>
+                    </div>
+                </div>
+                <div class="w-11 h-11 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-stopwatch"></i>
+                </div>
+            </div>
+
+            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-slate-400 font-medium">Total Workouts</p>
+                    <h3 class="text-2xl font-black text-slate-100 mt-1" th:text="${progress.totalWorkouts}">0</h3>
+                    <p class="text-[11px] text-teal-400 mt-1"><i class="fa-solid fa-check"></i> All-time completed</p>
+                </div>
+                <div class="w-11 h-11 rounded-xl bg-teal-500/10 text-teal-400 flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-dumbbell"></i>
+                </div>
+            </div>
+
+            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-slate-400 font-medium">Calories Burned</p>
+                    <h3 class="text-2xl font-black text-slate-100 mt-1">
+                        <span th:text="${progress.totalCalories}">0</span>
+                        <span class="text-xs font-normal text-slate-400">kcal</span>
+                    </h3>
+                    <p class="text-[11px] text-amber-400 mt-1"><i class="fa-solid fa-fire"></i> Estimated burn</p>
+                </div>
+                <div class="w-11 h-11 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-fire-flame-curved"></i>
+                </div>
+            </div>
+
+            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-slate-400 font-medium">BMI / Goal</p>
+                    <h3 class="text-xl font-black text-slate-100 mt-1">
+                        <span th:text="${guidance.bmi}">22.5</span>
+                        <span class="text-xs font-normal text-emerald-400 px-1.5 py-0.5 rounded bg-emerald-500/10" th:text="${guidance.bmiCategory}">Normal</span>
+                    </h3>
+                    <p class="text-[11px] text-slate-400 mt-1 truncate" th:text="${user.fitnessGoal}">General Health</p>
+                </div>
+                <div class="w-11 h-11 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-heart-pulse"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="flex overflow-x-auto border-b border-slate-800 mb-6 gap-2 text-sm font-medium scrollbar-none">
+            <a th:href="@{/user/dashboard(tab='workouts')}"
+               th:class="'px-4 py-2.5 rounded-t-xl transition flex items-center gap-2 whitespace-nowrap ' + (${activeTab == 'workouts'} ? 'bg-slate-900 text-emerald-400 border-t-2 border-emerald-500 font-bold' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/50')">
+                <i class="fa-solid fa-calendar-check"></i> Workout Log
+            </a>
+            <a th:href="@{/user/dashboard(tab='progress')}"
+               th:class="'px-4 py-2.5 rounded-t-xl transition flex items-center gap-2 whitespace-nowrap ' + (${activeTab == 'progress'} ? 'bg-slate-900 text-emerald-400 border-t-2 border-emerald-500 font-bold' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/50')">
+                <i class="fa-solid fa-chart-line"></i> Progress Tracking
+            </a>
+            <a th:href="@{/user/dashboard(tab='challenges')}"
+               th:class="'px-4 py-2.5 rounded-t-xl transition flex items-center gap-2 whitespace-nowrap ' + (${activeTab == 'challenges'} ? 'bg-slate-900 text-emerald-400 border-t-2 border-emerald-500 font-bold' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/50')">
+                <i class="fa-solid fa-trophy"></i> Fitness Challenges
+            </a>
+            <a th:href="@{/user/dashboard(tab='history')}"
+               th:class="'px-4 py-2.5 rounded-t-xl transition flex items-center gap-2 whitespace-nowrap ' + (${activeTab == 'history'} ? 'bg-slate-900 text-emerald-400 border-t-2 border-emerald-500 font-bold' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/50')">
+                <i class="fa-solid fa-clock-rotate-left"></i> Challenge History
+            </a>
+            <a th:href="@{/user/dashboard(tab='guidance')}"
+               th:class="'px-4 py-2.5 rounded-t-xl transition flex items-center gap-2 whitespace-nowrap ' + (${activeTab == 'guidance'} ? 'bg-slate-900 text-emerald-400 border-t-2 border-emerald-500 font-bold' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/50')">
+                <i class="fa-solid fa-book-medical"></i> Fitness Guidance & Community
+            </a>
+            <a th:href="@{/user/dashboard(tab='profile')}"
+               th:class="'px-4 py-2.5 rounded-t-xl transition flex items-center gap-2 whitespace-nowrap ' + (${activeTab == 'profile'} ? 'bg-slate-900 text-emerald-400 border-t-2 border-emerald-500 font-bold' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/50')">
+                <i class="fa-solid fa-id-card"></i> Profile Management
+            </a>
+        </div>
+
+        <!-- ================= TAB 1: WORKOUT LOG ================= -->
+        <div th:if="${activeTab == 'workouts'}" class="space-y-6">
+            <!-- Header with Quick Action -->
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-900/60 p-5 rounded-2xl border border-slate-800">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-100 flex items-center gap-2">
+                        <i class="fa-solid fa-dumbbell text-emerald-400"></i> Workout Log
+                    </h2>
+                    <p class="text-slate-400 text-xs mt-1">Log new workout sessions and manage previous activities with editing & deletion options.</p>
+                </div>
+                <button onclick="openModal('logWorkoutModal')" class="px-4 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl text-sm transition shadow-lg shadow-emerald-500/20 flex items-center gap-2">
+                    <i class="fa-solid fa-plus"></i> Log Workout
+                </button>
+            </div>
+
+            <!-- Workouts Table -->
+            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+                <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900">
+                    <h3 class="font-bold text-sm text-slate-200">Logged Workout History</h3>
+                    <span class="text-xs text-slate-400" th:text="${workouts.size()} + ' total records'">0 total records</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm text-slate-300">
+                        <thead class="bg-slate-950/60 text-xs uppercase text-slate-400 border-b border-slate-800">
+                            <tr>
+                                <th class="py-3.5 px-4 font-semibold">Date</th>
+                                <th class="py-3.5 px-4 font-semibold">Activity Type</th>
+                                <th class="py-3.5 px-4 font-semibold">Duration</th>
+                                <th class="py-3.5 px-4 font-semibold">Intensity</th>
+                                <th class="py-3.5 px-4 font-semibold">Calories</th>
+                                <th class="py-3.5 px-4 font-semibold">Notes</th>
+                                <th class="py-3.5 px-4 font-semibold text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800/60">
+                            <tr th:if="${workouts.isEmpty()}">
+                                <td colspan="7" class="py-8 text-center text-slate-500">
+                                    <i class="fa-solid fa-dumbbell text-3xl mb-2 text-slate-600"></i>
+                                    <p>No workouts logged yet. Click "Log Workout" above to record your first workout!</p>
+                                </td>
+                            </tr>
+                            <tr th:each="w : ${workouts}" class="hover:bg-slate-800/40 transition">
+                                <td class="py-3.5 px-4 font-medium text-slate-200" th:text="${w.workoutDate}">2026-10-08</td>
+                                <td class="py-3.5 px-4">
+                                    <span class="inline-flex items-center gap-1.5 font-semibold text-slate-100">
+                                        <i class="fa-solid fa-person-running text-emerald-400" th:if="${w.type == 'Running'}"></i>
+                                        <i class="fa-solid fa-person-biking text-teal-400" th:if="${w.type == 'Cycling'}"></i>
+                                        <i class="fa-solid fa-dumbbell text-amber-400" th:if="${w.type == 'Gym & Weight Training'}"></i>
+                                        <i class="fa-solid fa-spa text-indigo-400" th:if="${w.type == 'Yoga & Flexibility'}"></i>
+                                        <i class="fa-solid fa-person-swimming text-cyan-400" th:if="${w.type == 'Swimming'}"></i>
+                                        <i class="fa-solid fa-bolt text-rose-400" th:if="${w.type == 'HIIT'}"></i>
+                                        <i class="fa-solid fa-person-walking text-slate-400" th:if="${w.type == 'Walking'}"></i>
+                                        <span th:text="${w.type}">Running</span>
+                                    </span>
+                                </td>
+                                <td class="py-3.5 px-4">
+                                    <span class="font-bold text-slate-200" th:text="${w.duration}">30</span> <span class="text-xs text-slate-500">mins</span>
+                                </td>
+                                <td class="py-3.5 px-4">
+                                    <span th:if="${w.intensity == 'LOW'}" class="px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">LOW</span>
+                                    <span th:if="${w.intensity == 'MEDIUM'}" class="px-2 py-0.5 text-xs font-semibold rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">MEDIUM</span>
+                                    <span th:if="${w.intensity == 'HIGH'}" class="px-2 py-0.5 text-xs font-semibold rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20">HIGH</span>
+                                </td>
+                                <td class="py-3.5 px-4 text-amber-300 font-medium">
+                                    <span th:text="${w.caloriesBurned}">250</span> <span class="text-xs text-slate-500">kcal</span>
+                                </td>
+                                <td class="py-3.5 px-4 text-xs text-slate-400 max-w-xs truncate" th:text="${w.notes}">Morning routine</td>
+                                <td class="py-3.5 px-4 text-right">
+                                    <div class="inline-flex items-center gap-2">
+                                        <!-- Edit button -->
+                                        <button th:data-id="${w.id}" th:data-type="${w.type}" th:data-duration="${w.duration}" th:data-intensity="${w.intensity}" th:data-calories="${w.caloriesBurned}" th:data-notes="${w.notes}" th:data-date="${w.workoutDate}"
+                                                onclick="openEditWorkoutModal(this.getAttribute('data-id'), this.getAttribute('data-type'), this.getAttribute('data-duration'), this.getAttribute('data-intensity'), this.getAttribute('data-calories'), this.getAttribute('data-notes'), this.getAttribute('data-date'))"
+                                                class="px-2.5 py-1 text-xs rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition border border-slate-700" title="Edit Workout">
+                                            <i class="fa-solid fa-pen-to-square"></i> Edit
+                                        </button>
+                                        <!-- Delete form -->
+                                        <form th:action="@{/user/workouts/delete/{id}(id=${w.id})}" method="POST" onsubmit="return confirm('Are you sure you want to delete this workout log?');" class="inline">
+                                            <button type="submit" class="px-2.5 py-1 text-xs rounded-lg bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 border border-rose-500/30 transition" title="Delete Workout">
+                                                <i class="fa-solid fa-trash-can"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= TAB 2: PROGRESS TRACKING ================= -->
+        <div th:if="${activeTab == 'progress'}" class="space-y-6">
+            <div class="bg-slate-900/60 p-5 rounded-2xl border border-slate-800">
+                <h2 class="text-xl font-bold text-slate-100 flex items-center gap-2">
+                    <i class="fa-solid fa-chart-line text-emerald-400"></i> Fitness Progress & Visual Reports
+                </h2>
+                <p class="text-slate-400 text-xs mt-1">Track your consistency, daily minutes, calories burned, and workout variety over time.</p>
+            </div>
+
+            <!-- Charts Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Daily Workout Duration Chart -->
+                <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 shadow-lg">
+                    <h3 class="text-sm font-bold text-slate-200 mb-4 flex items-center justify-between">
+                        <span><i class="fa-solid fa-chart-simple text-emerald-400 mr-2"></i> Last 7 Days Workout Duration (Minutes)</span>
+                    </h3>
+                    <div class="h-64">
+                        <canvas id="dailyTrendChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Workout Distribution by Type Chart -->
+                <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 shadow-lg">
+                    <h3 class="text-sm font-bold text-slate-200 mb-4 flex items-center justify-between">
+                        <span><i class="fa-solid fa-chart-pie text-teal-400 mr-2"></i> Workout Breakdown by Activity Type</span>
+                    </h3>
+                    <div class="h-64 flex items-center justify-center">
+                        <canvas id="typeChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detailed Performance Summary & Goal Achievement Card -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Weekly Target Meter -->
+                <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5">
+                    <h4 class="text-xs uppercase tracking-wider text-slate-400 font-bold mb-3">Weekly Target Progress</h4>
+                    <div class="flex items-baseline gap-2 mb-2">
+                        <span class="text-3xl font-black text-emerald-400" th:text="${progress.weeklyMinutes}">0</span>
+                        <span class="text-sm text-slate-400">/ <span th:text="${progress.targetWeeklyMinutes}">150</span> minutes</span>
+                    </div>
+                    <div class="w-full bg-slate-800 rounded-full h-3 mb-2 overflow-hidden">
+                        <div class="bg-gradient-to-r from-emerald-500 to-teal-400 h-3 rounded-full" th:style="'width: ' + ${progress.weeklyProgressPercentage} + '%'"></div>
+                    </div>
+                    <p class="text-xs text-slate-400" th:text="${guidance.statusMessage}">Keep going!</p>
+                </div>
+
+                <!-- Intensity Breakdown -->
+                <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5">
+                    <h4 class="text-xs uppercase tracking-wider text-slate-400 font-bold mb-3">Workout Intensity Spread</h4>
+                    <div class="space-y-2 text-xs">
+                        <div class="flex justify-between items-center">
+                            <span class="text-rose-400 font-semibold"><i class="fa-solid fa-bolt mr-1"></i> High Intensity</span>
+                            <span class="font-bold text-slate-200" th:text="${progress.countByIntensity.get('HIGH') != null ? progress.countByIntensity.get('HIGH') : 0} + ' sessions'">0</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-amber-400 font-semibold"><i class="fa-solid fa-bolt mr-1"></i> Medium Intensity</span>
+                            <span class="font-bold text-slate-200" th:text="${progress.countByIntensity.get('MEDIUM') != null ? progress.countByIntensity.get('MEDIUM') : 0} + ' sessions'">0</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-blue-400 font-semibold"><i class="fa-solid fa-bolt mr-1"></i> Low Intensity</span>
+                            <span class="font-bold text-slate-200" th:text="${progress.countByIntensity.get('LOW') != null ? progress.countByIntensity.get('LOW') : 0} + ' sessions'">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Personalized Recommendation Banner -->
+                <div class="bg-gradient-to-br from-emerald-950/50 to-slate-900 border border-emerald-500/30 rounded-2xl p-5">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[11px] font-bold" th:text="${guidance.statusBadge}">Status</span>
+                        <span class="text-xs text-slate-400 font-medium">Smart AI Coach</span>
+                    </div>
+                    <h4 class="text-sm font-bold text-slate-100 mb-2">Tailored Fitness Tip</h4>
+                    <ul class="text-xs text-slate-300 space-y-1.5 list-disc list-inside">
+                        <li th:each="r : ${guidance.recommendations}" th:text="${r}">Stay hydrated!</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= TAB 3: FITNESS CHALLENGES ================= -->
+        <div th:if="${activeTab == 'challenges'}" class="space-y-6">
+            <div class="bg-slate-900/60 p-5 rounded-2xl border border-slate-800">
+                <h2 class="text-xl font-bold text-slate-100 flex items-center gap-2">
+                    <i class="fa-solid fa-trophy text-amber-400"></i> Fitness Challenges & Competitions
+                </h2>
+                <p class="text-slate-400 text-xs mt-1">Join community challenges, track your milestones, and earn exclusive fitness achievement badges!</p>
+            </div>
+
+            <!-- Active Participations Currently Joined -->
+            <div th:if="${!userActiveParticipations.isEmpty()}" class="space-y-4">
+                <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-spinner text-emerald-400"></i> My Active Challenge Participations
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div th:each="p : ${userActiveParticipations}" class="bg-slate-900/90 border border-slate-700/80 rounded-2xl p-5 shadow-lg relative overflow-hidden">
+                        <div class="flex justify-between items-start mb-3">
+                            <div>
+                                <span class="px-2.5 py-0.5 text-[11px] rounded-full font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 uppercase" th:text="${p.challenge.category}">Cardio</span>
+                                <h4 class="text-base font-bold text-slate-100 mt-1" th:text="${p.challenge.title}">Challenge Title</h4>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-xs text-amber-400 font-bold flex items-center gap-1">
+                                    <i class="fa-solid fa-medal"></i> <span th:text="${p.challenge.badgeReward}">Badge</span>
+                                </span>
+                            </div>
+                        </div>
+                        <p class="text-xs text-slate-400 mb-4" th:text="${p.challenge.description}">Challenge details</p>
+                        
+                        <!-- Progress Bar -->
+                        <div class="mb-4">
+                            <div class="flex justify-between text-xs mb-1 font-semibold">
+                                <span class="text-slate-300">Completion Progress</span>
+                                <span class="text-emerald-400" th:text="${p.currentProgress} + '%'">50%</span>
+                            </div>
+                            <div class="w-full bg-slate-800 rounded-full h-2.5 overflow-hidden">
+                                <div class="bg-gradient-to-r from-emerald-500 to-teal-400 h-2.5 rounded-full" th:style="'width: ' + ${p.currentProgress} + '%'"></div>
+                            </div>
+                        </div>
+
+                        <!-- Action button to update progress -->
+                        <div class="flex justify-between items-center pt-3 border-t border-slate-800">
+                            <span class="text-[11px] text-slate-500" th:text="'Joined: ' + ${#temporals.format(p.joinedAt, 'dd MMM yyyy')}">Joined Date</span>
+                            <button th:data-id="${p.id}" th:data-title="${p.challenge.title}" th:data-progress="${p.currentProgress}"
+                                    onclick="openProgressModal(this.getAttribute('data-id'), this.getAttribute('data-title'), this.getAttribute('data-progress'))"
+                                    class="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold transition flex items-center gap-1.5 shadow-sm">
+                                <i class="fa-solid fa-sliders"></i> Update Progress
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Available Challenges to Join -->
+            <div class="space-y-4">
+                <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-bullseye text-teal-400"></i> Available Challenges to Join
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div th:each="c : ${activeChallenges}" class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between hover:border-slate-700 transition">
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="px-2 py-0.5 text-[11px] rounded-full font-semibold bg-slate-800 text-slate-300 border border-slate-700" th:text="${c.category}">Category</span>
+                                <span class="text-xs text-amber-400 font-bold flex items-center gap-1">
+                                    <i class="fa-solid fa-award"></i> <span th:text="${c.badgeReward}">Badge</span>
+                                </span>
+                            </div>
+                            <h4 class="text-base font-bold text-slate-100 mb-2" th:text="${c.title}">Title</h4>
+                            <p class="text-xs text-slate-400 mb-4 line-clamp-3" th:text="${c.description}">Description</p>
+                            
+                            <div class="text-[11px] text-slate-400 space-y-1 mb-4 bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/80">
+                                <div><i class="fa-solid fa-stopwatch text-slate-500 mr-1.5"></i> Target: <span class="text-slate-200 font-bold" th:text="${c.targetMinutes} + ' mins / ' + ${c.targetWorkouts} + ' workouts'">300 mins</span></div>
+                                <div><i class="fa-regular fa-calendar text-slate-500 mr-1.5"></i> Window: <span th:text="${c.startDate} + ' to ' + ${c.endDate}">2026-10-01 to 2026-10-31</span></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div th:if="${joinedChallengeIds.contains(c.id)}" class="w-full py-2 px-3 rounded-xl bg-slate-800 text-slate-400 text-xs font-semibold text-center border border-slate-700">
+                                <i class="fa-solid fa-check text-emerald-400 mr-1"></i> Already Joined
+                            </div>
+                            <form th:if="${!joinedChallengeIds.contains(c.id)}" th:action="@{/user/challenges/join/{id}(id=${c.id})}" method="POST">
+                                <button type="submit" class="w-full py-2.5 px-4 rounded-xl font-bold bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs transition shadow-lg shadow-emerald-500/10 flex items-center justify-center gap-2">
+                                    <i class="fa-solid fa-flag-checkered"></i> Join Challenge
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= TAB 4: CHALLENGE HISTORY ================= -->
+        <div th:if="${activeTab == 'history'}" class="space-y-6">
+            <div class="bg-slate-900/60 p-5 rounded-2xl border border-slate-800">
+                <h2 class="text-xl font-bold text-slate-100 flex items-center gap-2">
+                    <i class="fa-solid fa-clock-rotate-left text-teal-400"></i> Challenge History & Achievements
+                </h2>
+                <p class="text-slate-400 text-xs mt-1">List of past challenges, results, and rewards you have earned.</p>
+            </div>
+
+            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm text-slate-300">
+                        <thead class="bg-slate-950/60 text-xs uppercase text-slate-400 border-b border-slate-800">
+                            <tr>
+                                <th class="py-3.5 px-4 font-semibold">Challenge Name</th>
+                                <th class="py-3.5 px-4 font-semibold">Category</th>
+                                <th class="py-3.5 px-4 font-semibold">Joined On</th>
+                                <th class="py-3.5 px-4 font-semibold">Completion Status</th>
+                                <th class="py-3.5 px-4 font-semibold">Earned Reward Badge</th>
+                                <th class="py-3.5 px-4 font-semibold">Official Result</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800/60">
+                            <tr th:if="${challengeHistory.isEmpty()}">
+                                <td colspan="6" class="py-8 text-center text-slate-500">
+                                    <i class="fa-solid fa-trophy text-3xl mb-2 text-slate-600"></i>
+                                    <p>No completed past challenges found yet. Complete active challenges to populate your history log!</p>
+                                </td>
+                            </tr>
+                            <tr th:each="h : ${challengeHistory}" class="hover:bg-slate-800/40 transition">
+                                <td class="py-3.5 px-4 font-bold text-slate-100" th:text="${h.challenge.title}">Cardio Challenge</td>
+                                <td class="py-3.5 px-4" th:text="${h.challenge.category}">Cardio</td>
+                                <td class="py-3.5 px-4 text-xs text-slate-400" th:text="${#temporals.format(h.joinedAt, 'dd MMM yyyy')}">Date</td>
+                                <td class="py-3.5 px-4">
+                                    <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                                        <i class="fa-solid fa-check-double mr-1"></i> <span th:text="${h.status}">COMPLETED</span>
+                                    </span>
+                                </td>
+                                <td class="py-3.5 px-4">
+                                    <span class="inline-flex items-center gap-1.5 text-xs font-bold text-amber-300 bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/20">
+                                        <i class="fa-solid fa-medal"></i> <span th:text="${h.challenge.badgeReward}">Badge</span>
+                                    </span>
+                                </td>
+                                <td class="py-3.5 px-4 text-xs text-slate-300" th:text="${h.result}">Finished 100% of target</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= TAB 5: FITNESS GUIDANCE & COMMUNITY CONTENT ================= -->
+        <div th:if="${activeTab == 'guidance'}" class="space-y-6">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-900/60 p-5 rounded-2xl border border-slate-800">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-100 flex items-center gap-2">
+                        <i class="fa-solid fa-book-medical text-teal-400"></i> Fitness Guidance & Advice
+                    </h2>
+                    <p class="text-slate-400 text-xs mt-1">Access verified coaching recommendations and contribute your own fitness tips for admin review.</p>
+                </div>
+                <button onclick="openModal('contributeModal')" class="px-4 py-2.5 bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold rounded-xl text-sm transition shadow-lg shadow-teal-500/20 flex items-center gap-2">
+                    <i class="fa-solid fa-pen-nib"></i> Submit Fitness Tip / Guide
+                </button>
+            </div>
+
+            <!-- Personalized Health Evaluation Box -->
+            <div class="bg-gradient-to-r from-slate-900 to-emerald-950/40 border border-emerald-500/20 rounded-2xl p-6 shadow-xl">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-lg">
+                        <i class="fa-solid fa-heart-pulse"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-slate-100">Personalized Health & Nutrition Guidance</h3>
+                        <p class="text-xs text-slate-400">Tailored to your goal: <span class="text-emerald-400 font-semibold" th:text="${user.fitnessGoal}">Weight Loss</span> | BMI: <span class="text-emerald-400 font-semibold" th:text="${guidance.bmi}">22.0</span> (<span th:text="${guidance.bmiCategory}">Normal</span>)</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                    <div class="bg-slate-950/60 p-4 rounded-xl border border-slate-800">
+                        <h4 class="text-xs uppercase font-bold text-emerald-400 mb-2 flex items-center gap-1.5">
+                            <i class="fa-solid fa-dumbbell"></i> Workout Recommendations
+                        </h4>
+                        <ul class="text-xs text-slate-300 space-y-2 list-disc list-inside">
+                            <li th:each="r : ${guidance.recommendations}" th:text="${r}">Recommendation item</li>
+                        </ul>
+                    </div>
+                    <div class="bg-slate-950/60 p-4 rounded-xl border border-slate-800">
+                        <h4 class="text-xs uppercase font-bold text-teal-400 mb-2 flex items-center gap-1.5">
+                            <i class="fa-solid fa-apple-whole"></i> Nutritional Guidelines
+                        </h4>
+                        <ul class="text-xs text-slate-300 space-y-2 list-disc list-inside">
+                            <li th:each="d : ${guidance.dietTips}" th:text="${d}">Diet item</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Approved Community Guides -->
+            <div>
+                <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wider mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-newspaper text-emerald-400"></i> Verified Fitness Guides
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div th:each="c : ${approvedContent}" class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 hover:border-slate-700 transition">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="px-2 py-0.5 text-[11px] rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-semibold" th:text="${c.category}">Category</span>
+                            <span class="text-xs text-slate-500" th:text="'By ' + ${c.author.name}">Author</span>
+                        </div>
+                        <h4 class="text-base font-bold text-slate-100 mb-2" th:text="${c.title}">Title</h4>
+                        <p class="text-xs text-slate-300 whitespace-pre-line leading-relaxed" th:text="${c.body}">Content text</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- User's Own Submissions & Review Status -->
+            <div th:if="${!userSubmissions.isEmpty()}">
+                <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wider mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-list-check text-amber-400"></i> My Content Submissions & Review Status
+                </h3>
+                <div class="bg-slate-900/80 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+                    <table class="w-full text-left text-sm text-slate-300">
+                        <thead class="bg-slate-950/60 text-xs uppercase text-slate-400 border-b border-slate-800">
+                            <tr>
+                                <th class="py-3 px-4 font-semibold">Title</th>
+                                <th class="py-3 px-4 font-semibold">Category</th>
+                                <th class="py-3 px-4 font-semibold">Submitted On</th>
+                                <th class="py-3 px-4 font-semibold">Approval Status</th>
+                                <th class="py-3 px-4 font-semibold">Admin Feedback</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800/60">
+                            <tr th:each="sub : ${userSubmissions}">
+                                <td class="py-3 px-4 font-bold text-slate-100" th:text="${sub.title}">Article</td>
+                                <td class="py-3 px-4 text-xs" th:text="${sub.category}">Category</td>
+                                <td class="py-3 px-4 text-xs text-slate-400" th:text="${#temporals.format(sub.createdAt, 'dd MMM yyyy')}">Date</td>
+                                <td class="py-3 px-4">
+                                    <span th:if="${sub.status == 'APPROVED'}" class="px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">APPROVED</span>
+                                    <span th:if="${sub.status == 'PENDING'}" class="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30">PENDING REVIEW</span>
+                                    <span th:if="${sub.status == 'REJECTED'}" class="px-2 py-0.5 rounded-full text-xs font-bold bg-rose-500/10 text-rose-400 border border-rose-500/30">REJECTED</span>
+                                </td>
+                                <td class="py-3 px-4 text-xs text-slate-400" th:text="${sub.adminNotes != null ? sub.adminNotes : '-'}">-</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= TAB 6: PROFILE MANAGEMENT ================= -->
+        <div th:if="${activeTab == 'profile'}" class="space-y-6">
+            <div class="bg-slate-900/60 p-5 rounded-2xl border border-slate-800">
+                <h2 class="text-xl font-bold text-slate-100 flex items-center gap-2">
+                    <i class="fa-solid fa-id-card text-emerald-400"></i> Profile Management
+                </h2>
+                <p class="text-slate-400 text-xs mt-1">Manage your personal credentials, biometric parameters, and weekly workout goals.</p>
+            </div>
+
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 sm:p-8 max-w-2xl shadow-xl">
+                <form th:action="@{/user/profile/update}" method="POST" class="space-y-5">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Full Name</label>
+                            <input type="text" name="name" th:value="${user.name}" required
+                                   class="w-full bg-slate-950/70 border border-slate-700 rounded-xl px-4 py-2.5 text-slate-100 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Email Address</label>
+                            <input type="email" name="email" th:value="${user.email}" required
+                                   class="w-full bg-slate-950/70 border border-slate-700 rounded-xl px-4 py-2.5 text-slate-100 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-sm">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Change Password (leave blank to keep current)</label>
+                        <input type="password" name="password" placeholder="Enter new password if updating"
+                               class="w-full bg-slate-950/70 border border-slate-700 rounded-xl px-4 py-2.5 text-slate-100 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-sm">
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Weight (kg)</label>
+                            <input type="number" step="0.5" name="weight" th:value="${user.weight}" required
+                                   class="w-full bg-slate-950/70 border border-slate-700 rounded-xl px-4 py-2.5 text-slate-100 focus:outline-none focus:border-emerald-500 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Height (cm)</label>
+                            <input type="number" step="0.5" name="height" th:value="${user.height}" required
+                                   class="w-full bg-slate-950/70 border border-slate-700 rounded-xl px-4 py-2.5 text-slate-100 focus:outline-none focus:border-emerald-500 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Weekly Goal (Mins)</label>
+                            <input type="number" name="targetMinutesPerWeek" th:value="${user.targetMinutesPerWeek}" required
+                                   class="w-full bg-slate-950/70 border border-slate-700 rounded-xl px-4 py-2.5 text-slate-100 focus:outline-none focus:border-emerald-500 text-sm">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Primary Fitness Goal</label>
+                        <select name="fitnessGoal" class="w-full bg-slate-950/70 border border-slate-700 rounded-xl px-4 py-2.5 text-slate-100 focus:outline-none focus:border-emerald-500 text-sm">
+                            <option value="Weight Loss" th:selected="${user.fitnessGoal == 'Weight Loss'}">Weight Loss & Fat Burning</option>
+                            <option value="Muscle Gain" th:selected="${user.fitnessGoal == 'Muscle Gain'}">Muscle Gain & Hypertrophy</option>
+                            <option value="Endurance & Cardio" th:selected="${user.fitnessGoal == 'Endurance & Cardio'}">Endurance & Cardiovascular Stamina</option>
+                            <option value="General Health" th:selected="${user.fitnessGoal == 'General Health'}">General Health & Mobility</option>
+                        </select>
+                    </div>
+
+                    <div class="pt-4 border-t border-slate-800 flex justify-end">
+                        <button type="submit" class="px-6 py-2.5 rounded-xl font-bold bg-emerald-500 hover:bg-emerald-400 text-slate-950 transition shadow-lg shadow-emerald-500/20 text-sm flex items-center gap-2">
+                            <i class="fa-solid fa-floppy-disk"></i> Save Profile Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- ================= MODALS ================= -->
+
+    <!-- 1. Log Workout Modal -->
+    <div id="logWorkoutModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl">
+            <div class="flex justify-between items-center mb-5 pb-3 border-b border-slate-800">
+                <h3 class="text-lg font-bold text-slate-100 flex items-center gap-2">
+                    <i class="fa-solid fa-plus-circle text-emerald-400"></i> Log New Workout
+                </h3>
+                <button onclick="closeModal('logWorkoutModal')" class="text-slate-400 hover:text-slate-200"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+
+            <form th:action="@{/user/workouts/add}" method="POST" class="space-y-4">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Workout Type</label>
+                        <select id="logType" name="type" onchange="autoCalcCalories('log')" required
+                                class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-slate-100 text-sm focus:border-emerald-500">
+                            <option value="Running">Running</option>
+                            <option value="Cycling">Cycling</option>
+                            <option value="Gym & Weight Training">Gym & Weight Training</option>
+                            <option value="Yoga & Flexibility">Yoga & Flexibility</option>
+                            <option value="Swimming">Swimming</option>
+                            <option value="HIIT">HIIT</option>
+                            <option value="Walking">Walking</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Duration (Minutes)</label>
+                        <input type="number" id="logDuration" name="duration" value="30" min="1" max="600" oninput="autoCalcCalories('log')" required
+                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-slate-100 text-sm focus:border-emerald-500">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Intensity</label>
+                        <select id="logIntensity" name="intensity" onchange="autoCalcCalories('log')" required
+                                class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-slate-100 text-sm focus:border-emerald-500">
+                            <option value="LOW">Low</option>
+                            <option value="MEDIUM" selected>Medium</option>
+                            <option value="HIGH">High</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Calories Burned (kcal)</label>
+                        <input type="number" id="logCalories" name="caloriesBurned" placeholder="Auto-calculated"
+                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-slate-100 text-sm focus:border-emerald-500">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Workout Date</label>
+                    <input type="date" name="workoutDate" th:value="${#temporals.format(#temporals.createNow(), 'yyyy-MM-dd')}" required
+                           class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-slate-100 text-sm focus:border-emerald-500">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Notes / Reflection (Optional)</label>
+                    <textarea name="notes" rows="2" placeholder="e.g. Felt energetic, did 5x5 squats..."
+                              class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-slate-100 text-sm focus:border-emerald-500"></textarea>
+                </div>
+
+                <div class="pt-3 border-t border-slate-800 flex justify-end gap-2">
+                    <button type="button" onclick="closeModal('logWorkoutModal')" class="px-4 py-2 rounded-xl text-slate-400 hover:bg-slate-800 text-xs font-semibold">Cancel</button>
+                    <button type="submit" class="px-5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold transition">Confirm & Log</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 2. Edit Workout Modal -->
+    <div id="editWorkoutModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl">
+            <div class="flex justify-between items-center mb-5 pb-3 border-b border-slate-800">
+                <h3 class="text-lg font-bold text-slate-100 flex items-center gap-2">
+                    <i class="fa-solid fa-pen-to-square text-emerald-400"></i> Edit Workout Log
+                </h3>
+                <button onclick="closeModal('editWorkoutModal')" class="text-slate-400 hover:text-slate-200"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+
+            <form id="editWorkoutForm" method="POST" class="space-y-4">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Workout Type</label>
+                        <select id="editType" name="type" required
+                                class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-slate-100 text-sm focus:border-emerald-500">
+                            <option value="Running">Running</option>
+                            <option value="Cycling">Cycling</option>
+                            <option value="Gym & Weight Training">Gym & Weight Training</option>
+                            <option value="Yoga & Flexibility">Yoga & Flexibility</option>
+                            <option value="Swimming">Swimming</option>
+                            <option value="HIIT">HIIT</option>
+                            <option value="Walking">Walking</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Duration (Minutes)</label>
+                        <input type="number" id="editDuration" name="duration" min="1" max="600" required
+                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-slate-100 text-sm focus:border-emerald-500">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Intensity</label>
+                        <select id="editIntensity" name="intensity" required
+                                class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-slate-100 text-sm focus:border-emerald-500">
+                            <option value="LOW">Low</option>
+                            <option value="MEDIUM">Medium</option>
+                            <option value="HIGH">High</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Calories Burned (kcal)</label>
+                        <input type="number" id="editCalories" name="caloriesBurned"
+                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-slate-100 text-sm focus:border-emerald-500">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Workout Date</label>
+                    <input type="date" id="editDate" name="workoutDate" required
+                           class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-slate-100 text-sm focus:border-emerald-500">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Notes</label>
+                    <textarea id="editNotes" name="notes" rows="2"
+                              class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-slate-100 text-sm focus:border-emerald-500"></textarea>
+                </div>
+
+                <div class="pt-3 border-t border-slate-800 flex justify-end gap-2">
+                    <button type="button" onclick="closeModal('editWorkoutModal')" class="px-4 py-2 rounded-xl text-slate-400 hover:bg-slate-800 text-xs font-semibold">Cancel</button>
+                    <button type="submit" class="px-5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold transition">Update Workout</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 3. Update Challenge Progress Modal -->
+    <div id="progressModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl">
+            <div class="flex justify-between items-center mb-4 pb-2 border-b border-slate-800">
+                <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
+                    <i class="fa-solid fa-sliders text-emerald-400"></i> Update Challenge Progress
+                </h3>
+                <button onclick="closeModal('progressModal')" class="text-slate-400 hover:text-slate-200"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <p id="progressModalTitle" class="text-xs text-slate-400 mb-4 font-semibold">Challenge Name</p>
+
+            <form id="progressForm" method="POST" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Completion Percentage (%)</label>
+                    <div class="flex items-center gap-3">
+                        <input type="range" id="progressSlider" name="progress" min="0" max="100" value="50" oninput="document.getElementById('progressValueText').innerText = this.value + '%'"
+                               class="w-full accent-emerald-500">
+                        <span id="progressValueText" class="text-emerald-400 font-bold text-sm w-12 text-right">50%</span>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2 p-3 rounded-xl bg-slate-950 border border-slate-800">
+                    <input type="checkbox" id="markCompletedCheck" name="completed" value="true" class="rounded text-emerald-500 focus:ring-emerald-500">
+                    <label for="markCompletedCheck" class="text-xs text-slate-300 font-medium">Mark challenge fully completed (Award Badge!)</label>
+                </div>
+
+                <div class="pt-3 border-t border-slate-800 flex justify-end gap-2">
+                    <button type="button" onclick="closeModal('progressModal')" class="px-3 py-1.5 rounded-lg text-slate-400 hover:bg-slate-800 text-xs">Cancel</button>
+                    <button type="submit" class="px-4 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold transition">Save Progress</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 4. Contribute Fitness Article Modal -->
+    <div id="contributeModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl">
+            <div class="flex justify-between items-center mb-4 pb-2 border-b border-slate-800">
+                <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
+                    <i class="fa-solid fa-pen-nib text-teal-400"></i> Submit Fitness Content
+                </h3>
+                <button onclick="closeModal('contributeModal')" class="text-slate-400 hover:text-slate-200"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <p class="text-xs text-slate-400 mb-4">Share your workout advice, routine, or nutrition insight with the community. Submitted content will be reviewed by an administrator.</p>
+
+            <form th:action="@{/user/content/submit}" method="POST" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Article Title</label>
+                    <input type="text" name="title" required placeholder="e.g. 5 Dynamic Warm-Ups Before Sprinting"
+                           class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-slate-100 text-sm focus:border-teal-500">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Category</label>
+                    <select name="category" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-slate-100 text-sm focus:border-teal-500">
+                        <option value="Workout Routine">Workout Routine</option>
+                        <option value="Nutrition & Diet">Nutrition & Diet</option>
+                        <option value="Recovery & Mobility">Recovery & Mobility</option>
+                        <option value="Motivation & Mindset">Motivation & Mindset</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Article Body / Content</label>
+                    <textarea name="body" rows="4" required placeholder="Detail the steps, techniques, tips, and benefits..."
+                              class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-slate-100 text-sm focus:border-teal-500"></textarea>
+                </div>
+
+                <div class="pt-3 border-t border-slate-800 flex justify-end gap-2">
+                    <button type="button" onclick="closeModal('contributeModal')" class="px-3 py-1.5 rounded-lg text-slate-400 hover:bg-slate-800 text-xs">Cancel</button>
+                    <button type="submit" class="px-4 py-1.5 rounded-lg bg-teal-500 hover:bg-teal-400 text-slate-950 text-xs font-bold transition">Submit for Review</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts for Modals and Chart.js -->
+    <script th:inline="javascript">
+        function openModal(id) {
+            document.getElementById(id).classList.remove('hidden');
+        }
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        function openEditWorkoutModal(id, type, duration, intensity, calories, notes, date) {
+            document.getElementById('editWorkoutForm').action = '/user/workouts/edit/' + id;
+            document.getElementById('editType').value = type;
+            document.getElementById('editDuration').value = duration;
+            document.getElementById('editIntensity').value = intensity;
+            document.getElementById('editCalories').value = calories;
+            document.getElementById('editNotes').value = notes;
+            document.getElementById('editDate').value = date;
+            openModal('editWorkoutModal');
+        }
+
+        function openProgressModal(participationId, title, currentProgress) {
+            document.getElementById('progressForm').action = '/user/challenges/update-progress/' + participationId;
+            document.getElementById('progressModalTitle').innerText = title;
+            document.getElementById('progressSlider').value = currentProgress;
+            document.getElementById('progressValueText').innerText = currentProgress + '%';
+            document.getElementById('markCompletedCheck').checked = (currentProgress >= 100);
+            openModal('progressModal');
+        }
+
+        function autoCalcCalories(prefix) {
+            const type = document.getElementById(prefix + 'Type').value;
+            const duration = parseInt(document.getElementById(prefix + 'Duration').value) || 0;
+            const intensity = document.getElementById(prefix + 'Intensity').value;
+
+            if (duration > 0) {
+                fetch(`/api/estimate-calories?type=${encodeURIComponent(type)}&duration=${duration}&intensity=${encodeURIComponent(intensity)}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        document.getElementById(prefix + 'Calories').value = data.estimatedCalories;
+                    })
+                    .catch(err => console.log('Calorie calculation err', err));
+            }
+        }
+
+        // Initialize Charts if on progress tab
+        /*<![CDATA[*/
+        const last7DaysMap = /*[[${progress.last7DaysMinutes}]]*/ {};
+        const countByTypeMap = /*[[${progress.countByType}]]*/ {};
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Chart 1: Daily Trend
+            const trendCtx = document.getElementById('dailyTrendChart');
+            if (trendCtx && last7DaysMap) {
+                const labels = Object.keys(last7DaysMap);
+                const values = Object.values(last7DaysMap);
+
+                new Chart(trendCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Workout Minutes',
+                            data: values,
+                            backgroundColor: 'rgba(16, 185, 129, 0.7)',
+                            borderColor: '#10b981',
+                            borderWidth: 1.5,
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: 'rgba(51, 65, 85, 0.4)' },
+                                ticks: { color: '#94a3b8' }
+                            },
+                            x: {
+                                grid: { display: false },
+                                ticks: { color: '#94a3b8' }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Chart 2: Type Breakdown
+            const typeCtx = document.getElementById('typeChart');
+            if (typeCtx && countByTypeMap) {
+                const typeLabels = Object.keys(countByTypeMap);
+                const typeValues = Object.values(countByTypeMap);
+
+                if (typeLabels.length > 0) {
+                    new Chart(typeCtx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: typeLabels,
+                            datasets: [{
+                                data: typeValues,
+                                backgroundColor: [
+                                    '#10b981', '#14b8a6', '#f59e0b', '#6366f1', '#ec4899', '#06b6d4', '#64748b'
+                                ],
+                                borderWidth: 0
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: { color: '#cbd5e1', boxWidth: 12, font: { size: 11 } }
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+        });
+        /*]]>*/
+    </script>
+</body>
+</html>
